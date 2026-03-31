@@ -9,6 +9,7 @@ import json
 import traceback
 import time
 import os
+import re
 
 import requests
 
@@ -160,14 +161,41 @@ def push_plus(content):
         print(f"消息推送失败: {e}")
 
 
-def main():
-    """主函数"""
-    # 检查必要的环境变量
-    if not all([CF_API_TOKEN, CF_ZONE_ID, CF_DNS_NAME]):
-        print("错误: 缺少必要的环境变量 (CF_API_TOKEN, CF_ZONE_ID, CF_DNS_NAME)")
+def update_readme(ips):
+    """
+    将优选结果更新到 README.md
+    """
+    readme_path = "README.md"
+    if not os.path.exists(readme_path):
+        print("未找到 README.md 文件，跳过更新。")
         return
 
-    # 获取最新优选 IP
+    try:
+        with open(readme_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        marker_start = ""
+        marker_end = ""
+        current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        
+        ip_text = f"**最新优选IP:** `{', '.join(ips)}`  \n**更新时间:** {current_time}"
+        replacement = f"{marker_start}\n### 最新优选IP测速结果 (未配置Secrets时展示)\n{ip_text}\n{marker_end}"
+
+        if marker_start in content and marker_end in content:
+            content = re.sub(f"{marker_start}.*?{marker_end}", replacement, content, flags=re.DOTALL)
+        else:
+            content += f"\n\n{replacement}\n"
+
+        with open(readme_path, "w", encoding="utf-8") as f:
+            f.write(content)
+        print("已将优选IP测速结果更新至 README.md")
+    except Exception as e:
+        print(f"更新 README.md 时发生错误: {e}")
+
+
+def main():
+    """主函数"""
+    # 提前获取最新优选 IP，无论是否有 Secrets 都要获取
     ip_addresses_str = get_cf_speed_test_ip()
     if not ip_addresses_str:
         print("错误: 无法获取优选 IP")
@@ -176,6 +204,12 @@ def main():
     ip_addresses = [ip.strip() for ip in ip_addresses_str.split(',') if ip.strip()]
     if not ip_addresses:
         print("错误: 未解析到有效 IP 地址")
+        return
+
+    # 检查必要的环境变量
+    if not all([CF_API_TOKEN, CF_ZONE_ID, CF_DNS_NAME]):
+        print("未配置完整的 Secrets (CF_API_TOKEN, CF_ZONE_ID, CF_DNS_NAME)，将把优选结果更新到 README.md")
+        update_readme(ip_addresses)
         return
 
     # 获取 DNS 记录
