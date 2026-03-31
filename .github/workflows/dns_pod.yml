@@ -8,18 +8,29 @@ on:
     - cron: '0 */6 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v4
+        
       - name: 'Set up Python'
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
+          
       - name: 'Install dependencies'
-        run: if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        run: |
+          if [ ! -f requirements.txt ]; then
+            echo "requests" > requirements.txt
+            echo "自动生成 requirements.txt 成功"
+          fi
+          pip install -r requirements.txt
+          
       - name: 'run dnspod'
         env:
           DOMAIN: ${{ secrets.DOMAIN }}
@@ -28,3 +39,10 @@ jobs:
           SECRETKEY: ${{ secrets.SECRETKEY }}
           PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
         run: python dnspod.py
+        
+      - name: 'Commit and push README if changed'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md requirements.txt
+          git diff --quiet && git diff --staged --quiet || (git commit -m "docs: auto update preferred IPs and requirements" && git push)
