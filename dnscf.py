@@ -9,6 +9,7 @@ import json
 import traceback
 import time
 import os
+import csv
 
 import requests
 
@@ -28,41 +29,34 @@ HEADERS = {
 DEFAULT_TIMEOUT = 30
 
 
-def get_cf_speed_test_ip(timeout=10, max_retries=5):
+def get_local_speed_test_ips(filepath='result.csv', top_n=20):
     """
-    获取 Cloudflare 优选 IP
-
-    Args:
-        timeout: 单次请求超时时间
-        max_retries: 最大重试次数
-
-    Returns:
-        优选 IP 字符串，失败返回 None
+    读取本地测速工具生成的 result.csv 文件，获取优选 IP
     """
-    for attempt in range(max_retries):
-        try:
-            response = requests.get(
-                'https://ip.164746.xyz/ipTop.html',
-                timeout=timeout
-            )
-            if response.status_code == 200:
-                return response.text
-        except Exception as e:
-            print(f"获取优选 IP 失败 (尝试 {attempt + 1}/{max_retries}): {e}")
-            if attempt == max_retries - 1:
-                traceback.print_exc()
-    return None
+    ips = []
+    if not os.path.exists(filepath):
+        print(f"未找到测速结果文件: {filepath}")
+        return ips
+        
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            reader = csv.reader(f)
+            next(reader, None)  # 跳过表头 (IP地址,已发送,已接收,丢包率,平均延迟,下载速度)
+            for row in reader:
+                if row and len(row) > 0:
+                    ips.append(row[0].strip())
+                    if len(ips) >= top_n:
+                        break
+    except Exception as e:
+        print(f"读取测速结果失败: {e}")
+        traceback.print_exc()
+        
+    return ips
 
 
 def get_dns_records(name):
     """
     获取指定名称的 DNS 记录列表（仅 A 类型）
-
-    Args:
-        name: DNS 记录名称
-
-    Returns:
-        记录字典列表（包含 id 和 content），失败返回空列表
     """
     records = []
     url = f'https://api.cloudflare.com/client/v4/zones/{CF_ZONE_ID}/dns_records'
@@ -72,7 +66,6 @@ def get_dns_records(name):
         if response.status_code == 200:
             result = response.json().get('result', [])
             for record in result:
-                # 只获取 A 类型记录，避免更新其他类型记录导致 400 错误
                 if record.get('name') == name and record.get('type') == 'A':
                     records.append({
                         'id': record['id'],
@@ -90,19 +83,10 @@ def get_dns_records(name):
 def update_dns_record(record_info, name, cf_ip):
     """
     更新 DNS 记录
-
-    Args:
-        record_info: DNS 记录字典，包含 id 和 content
-        name: DNS 记录名称
-        cf_ip: 新的 IP 地址
-
-    Returns:
-        操作结果字符串
     """
     record_id = record_info['id']
     current_ip = record_info.get('content', '')
 
-    # 如果 IP 相同则跳过更新
     if current_ip == cf_ip:
         current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         print(f"cf_dns_change skip: ---- Time: {current_time} ---- ip：{cf_ip} (已是最新)")
@@ -135,9 +119,6 @@ def update_dns_record(record_info, name, cf_ip):
 def push_plus(content):
     """
     发送 PushPlus 消息推送
-
-    Args:
-        content: 消息内容
     """
     if not PUSHPLUS_TOKEN:
         print("PUSHPLUS_TOKEN 未设置，跳过消息推送")
@@ -187,22 +168,18 @@ def update_readme(ips):
         end_idx = content.find(marker_end)
 
         if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
-            # 找到成对标记，直接替换中间内容
             content = content[:start_idx] + replacement + content[end_idx + len(marker_end):]
         else:
-            # 兼容处理：如果没有找到正确的注释标记，找到之前累加的文本进行截断清理
             fallback_text = "最新优选IP测速结果 (未配置Secrets时展示)"
             fallback_idx = content.find(fallback_text)
             
             if fallback_idx != -1:
-                # 寻找前面的 "### "，如果在附近则连带删除
                 hash_idx = content.rfind("### ", 0, fallback_idx)
                 if hash_idx != -1 and (fallback_idx - hash_idx) < 10:
                     content = content[:hash_idx]
                 else:
                     content = content[:fallback_idx]
             
-            # 追加到末尾
             content = content.rstrip() + f"\n\n{replacement}\n"
 
         with open(readme_path, "w", encoding="utf-8") as f:
@@ -214,15 +191,11 @@ def update_readme(ips):
 
 def main():
     """主函数"""
-    # 提前获取最新优选 IP，无论是否有 Secrets 都要获取
-    ip_addresses_str = get_cf_speed_test_ip()
-    if not ip_addresses_str:
-        print("错误: 无法获取优选 IP")
-        return
-
-    ip_addresses = [ip.strip() for ip in ip_addresses_str.split(',') if ip.strip()]
+    # 直接读取本地测速生成的 result.csv 文件获取前 20 个最优 IP
+    ip_addresses = get_local_speed_test_ips(top_n=20)
+    
     if not ip_addresses:
-        print("错误: 未解析到有效 IP 地址")
+        print("错误: 未解析到有效 IP 地址，请检查测速步骤是否正常执行")
         return
 
     # 检查必要的环境变量
