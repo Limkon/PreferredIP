@@ -143,7 +143,7 @@ def push_plus(content):
 
 def update_readme(ips):
     """
-    将优选结果更新到 README.md，并清理重复内容
+    将优选结果更新到 README.md，极简模式，仅显示 IP
     """
     readme_path = "README.md"
     if not os.path.exists(readme_path):
@@ -156,13 +156,13 @@ def update_readme(ips):
 
         marker_start = ""
         marker_end = ""
-        current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         
         # 截取前 20 个 IP 并使用换行符连接
         top_ips = ips[:20]
         ip_list_str = '\n'.join(top_ips)
         
-        replacement = f"{marker_start}\n### 最新优选IP测速结果 (未配置Secrets时展示)\n**更新时间:** {current_time}\n\n```text\n{ip_list_str}\n```\n{marker_end}"
+        # 极简替换内容：只有标记和纯 IP 列表
+        replacement = f"{marker_start}\n```text\n{ip_list_str}\n```\n{marker_end}"
 
         start_idx = content.find(marker_start)
         end_idx = content.find(marker_end)
@@ -170,6 +170,7 @@ def update_readme(ips):
         if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
             content = content[:start_idx] + replacement + content[end_idx + len(marker_end):]
         else:
+            # 清理以前残留的长标题文本
             fallback_text = "最新优选IP测速结果 (未配置Secrets时展示)"
             fallback_idx = content.find(fallback_text)
             
@@ -184,7 +185,7 @@ def update_readme(ips):
 
         with open(readme_path, "w", encoding="utf-8") as f:
             f.write(content)
-        print("已将优选IP测速结果更新至 README.md，并已清理重复内容。")
+        print("已将优选IP测速结果更新至 README.md，极简模式。")
     except Exception as e:
         print(f"更新 README.md 时发生错误: {e}")
 
