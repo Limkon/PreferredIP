@@ -44,7 +44,8 @@ jobs:
           
           if [ "$LATEST_VERSION" != "$CURRENT_VERSION" ] || [ ! -f CloudflareST ]; then
             echo "检测到新版本或本地文件缺失，正在下载并更新 CloudflareST..."
-            wget -qO cfst.tar.gz "https://github.com/XIU2/CloudflareSpeedTest/releases/download/$LATEST_VERSION/CloudflareST_linux_amd64.tar.gz"
+            # 【修复点】这里将压缩包名称修改为官方真实的名称：cfst_linux_amd64.tar.gz
+            wget -qO cfst.tar.gz "https://github.com/XIU2/CloudflareSpeedTest/releases/download/$LATEST_VERSION/cfst_linux_amd64.tar.gz"
             tar -zxf cfst.tar.gz CloudflareST ip.txt
             chmod +x CloudflareST
             echo "$LATEST_VERSION" > cfst_version.txt
