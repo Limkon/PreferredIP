@@ -11,7 +11,6 @@ import os
 import json
 import hashlib
 import hmac
-import re
 from datetime import datetime, timezone
 from typing import Dict, Any, List
 
@@ -289,7 +288,7 @@ def pushplus(content: str):
 
 def update_readme(ips: List[str]):
     """
-    将优选结果更新到 README.md
+    将优选结果更新到 README.md，并清理重复内容
     """
     readme_path = "README.md"
     if not os.path.exists(readme_path):
@@ -307,14 +306,31 @@ def update_readme(ips: List[str]):
         ip_text = f"**最新优选IP:** `{', '.join(ips)}`  \n**更新时间:** {current_time}"
         replacement = f"{marker_start}\n### 最新优选IP测速结果 (未配置Secrets时展示)\n{ip_text}\n{marker_end}"
 
-        if marker_start in content and marker_end in content:
-            content = re.sub(f"{marker_start}.*?{marker_end}", replacement, content, flags=re.DOTALL)
+        start_idx = content.find(marker_start)
+        end_idx = content.find(marker_end)
+
+        if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+            # 找到成对标记，直接替换中间内容
+            content = content[:start_idx] + replacement + content[end_idx + len(marker_end):]
         else:
-            content += f"\n\n{replacement}\n"
+            # 兼容处理：如果没有找到正确的注释标记，找到之前累加的文本进行截断清理
+            fallback_text = "最新优选IP测速结果 (未配置Secrets时展示)"
+            fallback_idx = content.find(fallback_text)
+            
+            if fallback_idx != -1:
+                # 寻找前面的 "### "，如果在附近则连带删除
+                hash_idx = content.rfind("### ", 0, fallback_idx)
+                if hash_idx != -1 and (fallback_idx - hash_idx) < 10:
+                    content = content[:hash_idx]
+                else:
+                    content = content[:fallback_idx]
+
+            # 追加到末尾
+            content = content.rstrip() + f"\n\n{replacement}\n"
 
         with open(readme_path, "w", encoding="utf-8") as f:
             f.write(content)
-        print("已将优选IP测速结果更新至 README.md")
+        print("已将优选IP测速结果更新至 README.md，并已清理重复内容。")
     except Exception as e:
         print(f"更新 README.md 时发生错误: {e}")
 
