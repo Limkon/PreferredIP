@@ -17,7 +17,7 @@ jobs:
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v4
-      
+        
       - name: 'Set up Python'
         uses: actions/setup-python@v5
         with:
@@ -30,6 +30,15 @@ jobs:
             echo "自动生成 requirements.txt 成功"
           fi
           pip install -r requirements.txt
+          
+      - name: 'Run CloudflareSpeedTest'
+        run: |
+          echo "正在下载并配置 CloudflareSpeedTest 测速工具..."
+          wget -qO cfst.tar.gz https://github.com/XIU2/CloudflareSpeedTest/releases/latest/download/CloudflareSpeedTest_linux_amd64.tar.gz
+          tar -zxf cfst.tar.gz CloudflareSpeedTest ip.txt
+          chmod +x CloudflareSpeedTest
+          echo "开始进行测速 (预计需要一小段时间)..."
+          ./CloudflareSpeedTest -o result.csv
           
       - name: 'run dnscf'
         env:
