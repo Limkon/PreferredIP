@@ -31,7 +31,7 @@ jobs:
           fi
           pip install -r requirements.txt
           
-      - name: 'Check and Download CloudflareST'
+      - name: 'Check and Download cfst'
         run: |
           LATEST_VERSION=$(curl -s https://api.github.com/repos/XIU2/CloudflareSpeedTest/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
           echo "最新版本为: $LATEST_VERSION"
@@ -42,23 +42,23 @@ jobs:
             echo "当前仓库版本为: $CURRENT_VERSION"
           fi
           
-          if [ "$LATEST_VERSION" != "$CURRENT_VERSION" ] || [ ! -f CloudflareST ]; then
-            echo "检测到新版本或本地文件缺失，正在下载并更新 CloudflareST..."
-            # 【修复点】这里将压缩包名称修改为官方真实的名称：cfst_linux_amd64.tar.gz
+          if [ "$LATEST_VERSION" != "$CURRENT_VERSION" ] || [ ! -f cfst ]; then
+            echo "检测到新版本或本地文件缺失，正在下载并更新 cfst..."
             wget -qO cfst.tar.gz "https://github.com/XIU2/CloudflareSpeedTest/releases/download/$LATEST_VERSION/cfst_linux_amd64.tar.gz"
-            tar -zxf cfst.tar.gz CloudflareST ip.txt
-            chmod +x CloudflareST
+            # 直接解压全部文件，避免以后作者改名导致找不到文件
+            tar -zxf cfst.tar.gz
+            chmod +x cfst
             echo "$LATEST_VERSION" > cfst_version.txt
             rm cfst.tar.gz
           else
-            echo "CloudflareST 已经是最新版，直接使用仓库缓存。"
-            chmod +x CloudflareST
+            echo "cfst 已经是最新版，直接使用仓库缓存。"
+            chmod +x cfst
           fi
           
-      - name: 'Run CloudflareST'
+      - name: 'Run cfst'
         run: |
           echo "开始进行测速 (预计需要一小段时间)..."
-          ./CloudflareST -o result.csv
+          ./cfst -o result.csv
           
       - name: 'run dnscf'
         env:
@@ -72,5 +72,5 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add README.md requirements.txt CloudflareST ip.txt cfst_version.txt
+          git add README.md requirements.txt cfst ip.txt cfst_version.txt
           git diff --quiet && git diff --staged --quiet || (git commit -m "docs: auto update preferred IPs and tools" && git push)
