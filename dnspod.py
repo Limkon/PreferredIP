@@ -303,8 +303,11 @@ def update_readme(ips: List[str]):
         marker_end = ""
         current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         
-        ip_text = f"**最新优选IP:** `{', '.join(ips)}`  \n**更新时间:** {current_time}"
-        replacement = f"{marker_start}\n### 最新优选IP测速结果 (未配置Secrets时展示)\n{ip_text}\n{marker_end}"
+        # 截取前 20 个 IP 并使用换行符连接
+        top_ips = ips[:20]
+        ip_list_str = '\n'.join(top_ips)
+        
+        replacement = f"{marker_start}\n### 最新优选IP测速结果 (未配置Secrets时展示)\n**更新时间:** {current_time}\n\n```text\n{ip_list_str}\n```\n{marker_end}"
 
         start_idx = content.find(marker_start)
         end_idx = content.find(marker_end)
