@@ -256,49 +256,20 @@ def pushplus(content: str):
 
 def update_readme(ips: List[str]):
     """
-    将优选结果更新到 README.md，极简模式，仅显示 IP
+    将优选结果更新到 README.md，极简模式，仅显示纯 IP 列表
     """
     readme_path = "README.md"
-    if not os.path.exists(readme_path):
-        print("未找到 README.md 文件，跳过更新。")
-        return
 
     try:
-        with open(readme_path, "r", encoding="utf-8") as f:
-            content = f.read()
-
-        marker_start = ""
-        marker_end = ""
-        
         # 截取前 20 个 IP 并使用换行符连接
         top_ips = ips[:20]
         ip_list_str = '\n'.join(top_ips)
         
-        # 极简替换内容：只有标记和纯 IP 列表
-        replacement = f"{marker_start}\n```text\n{ip_list_str}\n```\n{marker_end}"
-
-        start_idx = content.find(marker_start)
-        end_idx = content.find(marker_end)
-
-        if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
-            content = content[:start_idx] + replacement + content[end_idx + len(marker_end):]
-        else:
-            # 清理以前残留的长标题文本
-            fallback_text = "最新优选IP测速结果 (未配置Secrets时展示)"
-            fallback_idx = content.find(fallback_text)
-            
-            if fallback_idx != -1:
-                hash_idx = content.rfind("### ", 0, fallback_idx)
-                if hash_idx != -1 and (fallback_idx - hash_idx) < 10:
-                    content = content[:hash_idx]
-                else:
-                    content = content[:fallback_idx]
-
-            content = content.rstrip() + f"\n\n{replacement}\n"
-
+        # 直接覆盖写入，不包含任何 Markdown 代码块标签和其他文本
         with open(readme_path, "w", encoding="utf-8") as f:
-            f.write(content)
-        print("已将优选IP测速结果更新至 README.md，极简模式。")
+            f.write(ip_list_str)
+            
+        print("已将优选IP测速结果更新至 README.md，纯净模式（仅保留IP）。")
     except Exception as e:
         print(f"更新 README.md 时发生错误: {e}")
 
