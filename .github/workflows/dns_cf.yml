@@ -33,7 +33,7 @@ jobs:
           
       - name: 'Check and Download cfst'
         run: |
-          LATEST_VERSION=$(curl -s https://api.github.com/repos/XIU2/CloudflareSpeedTest/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+          LATEST_VERSION=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/XIU2/CloudflareSpeedTest/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
           echo "最新版本为: $LATEST_VERSION"
           
           CURRENT_VERSION=""
@@ -72,5 +72,5 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add README.md requirements.txt cfst ip.txt cfst_version.txt
+          git add README.md requirements.txt cfst_version.txt
           git diff --quiet && git diff --staged --quiet || (git commit -m "docs: auto update preferred IPs and tools" && git push)
