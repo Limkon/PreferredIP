@@ -19,6 +19,10 @@ CF_ZONE_ID = os.environ.get("CF_ZONE_ID")
 CF_DNS_NAME = os.environ.get("CF_DNS_NAME")
 PUSHPLUS_TOKEN = os.environ.get("PUSHPLUS_TOKEN")
 
+# ----- 基础配置 -----
+# 设置 README.md 中显示的优选 IP 数量以及读取测速结果的最大数量
+DISPLAY_IP_COUNT = 20
+
 # 请求头
 HEADERS = {
     'Authorization': f'Bearer {CF_API_TOKEN}',
@@ -29,7 +33,7 @@ HEADERS = {
 DEFAULT_TIMEOUT = 30
 
 
-def get_local_speed_test_ips(filepath='result.csv', top_n=20):
+def get_local_speed_test_ips(filepath='result.csv', top_n=DISPLAY_IP_COUNT):
     """
     读取本地测速工具生成的 result.csv 文件，获取优选 IP
     """
@@ -148,23 +152,23 @@ def update_readme(ips):
     readme_path = "README.md"
 
     try:
-        # 截取前 20 个 IP 并使用换行符连接
-        top_ips = ips[:20]
+        # 截取指定数量的 IP 并使用换行符连接，每行一个 IP
+        top_ips = ips[:DISPLAY_IP_COUNT]
         ip_list_str = '\n'.join(top_ips)
         
         # 直接覆盖写入，不包含任何 Markdown 代码块标签和其他文本
         with open(readme_path, "w", encoding="utf-8") as f:
             f.write(ip_list_str)
             
-        print("已将优选IP测速结果更新至 README.md，纯净模式（仅保留IP）。")
+        print(f"已将前 {len(top_ips)} 个优选IP更新至 README.md，纯净模式。")
     except Exception as e:
         print(f"更新 README.md 时发生错误: {e}")
 
 
 def main():
     """主函数"""
-    # 直接读取本地测速生成的 result.csv 文件获取前 20 个最优 IP
-    ip_addresses = get_local_speed_test_ips(top_n=20)
+    # 直接读取本地测速生成的 result.csv 文件获取最优 IP
+    ip_addresses = get_local_speed_test_ips(top_n=DISPLAY_IP_COUNT)
     
     if not ip_addresses:
         print("错误: 未解析到有效 IP 地址，请检查测速步骤是否正常执行")
