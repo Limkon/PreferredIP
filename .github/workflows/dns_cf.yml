@@ -72,5 +72,5 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add README.md requirements.txt cfst_version.txt
+          git add README.md requirements.txt ip.txt cfst_version.txt
           git diff --quiet && git diff --staged --quiet || (git commit -m "docs: auto update preferred IPs and tools" && git push)
