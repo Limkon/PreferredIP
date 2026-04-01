@@ -21,7 +21,7 @@ PUSHPLUS_TOKEN = os.environ.get("PUSHPLUS_TOKEN")
 
 # ----- 基础配置 -----
 # 设置 README.md 中显示的优选 IP 数量以及读取测速结果的最大数量
-DISPLAY_IP_COUNT = 20
+DISPLAY_IP_COUNT = 10
 
 # 请求头
 HEADERS = {
