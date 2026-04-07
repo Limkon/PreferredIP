@@ -36,10 +36,17 @@ def get_cn_optimized_ips_from_api(top_n=DISPLAY_IP_COUNT):
     print("正在从国内探针 API 获取最新优选 IP...")
     url = "https://api.hostmonit.com/get_optimization_ip"
     
+    # 新增：伪装成正常的 Chrome 浏览器请求，防止被 API 拦截
+    api_headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+    }
+    
     try:
-        # 该 API 要求 POST 请求及特定的 Payload
         payload = {"key": "iui"}
-        response = requests.post(url, json=payload, timeout=DEFAULT_TIMEOUT)
+        # 使用带有 headers 的请求
+        response = requests.post(url, json=payload, headers=api_headers, timeout=DEFAULT_TIMEOUT)
         
         if response.status_code == 200:
             data = response.json()
@@ -65,7 +72,7 @@ def get_cn_optimized_ips_from_api(top_n=DISPLAY_IP_COUNT):
                         break
                 print(f"成功获取 {len(ips)} 个大陆优选 IP。")
             else:
-                print(f"API 返回数据格式异常: {data}")
+                print(f"API 返回数据格式异常或未授权: {data}")
         else:
             print(f"获取优选IP API失败，状态码: {response.status_code}")
             
