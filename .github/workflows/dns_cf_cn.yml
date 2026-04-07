@@ -1,0 +1,50 @@
+name: 'dns_cf_cn_push (大陆专版)'
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+on:
+  schedule:
+    # 严谨处理：将运行时间错开 30 分钟，防止与原有 dns_cf.yml 发生 Git 锁冲突
+    - cron: '30 */12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+        
+      - name: 'Set up Python'
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+          
+      - name: 'Install dependencies'
+        run: |
+          if [ ! -f requirements.txt ]; then
+            echo "requests" > requirements.txt
+          fi
+          pip install -r requirements.txt
+          
+      - name: 'Run dnscf CN version'
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
+          # 建议：如果您想让大陆用户单独解析，可以在 Secrets 中新增一个 CF_DNS_NAME_CN 专门供此工作流使用
+          # 如果保持一致，则默认覆盖相同的域名
+          CF_DNS_NAME: ${{ secrets.CF_DNS_NAME }}
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+        run: python dnscf_cn.py
+        
+      - name: 'Commit and push changes'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          # 仅提交大陆版生成的专属文件，互不干扰
+          git add ip_cn.txt requirements.txt
+          git diff --quiet && git diff --staged --quiet || (git commit -m "docs: auto update Mainland CN preferred IPs" && git push)
