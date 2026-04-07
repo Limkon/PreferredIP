@@ -18,7 +18,7 @@ CF_DNS_NAME = os.environ.get("CF_DNS_NAME")
 PUSHPLUS_TOKEN = os.environ.get("PUSHPLUS_TOKEN")
 
 # 设置需要获取和解析的优选 IP 数量
-DISPLAY_IP_COUNT = 10
+DISPLAY_IP_COUNT = 2
 # 默认超时时间（秒）
 DEFAULT_TIMEOUT = 15
 
