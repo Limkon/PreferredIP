@@ -6,7 +6,7 @@ env:
 on:
   schedule:
     # 严谨处理：将运行时间错开 30 分钟，防止与原有 dns_cf.yml 发生 Git 锁冲突
-    - cron: '30 */12 * * *'
+    - cron: '30 */23 * * *'
   workflow_dispatch:
 
 permissions:
